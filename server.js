@@ -444,7 +444,7 @@ app.post('/operations/add', async function (req, res) {
     var currentDate = moment().format("DD-MM-YYYY");
     db.collection('operation_achat').insertOne({
         "client":req.body.client,
-        "produit" : "" ,
+        "produit" : [] ,
         "quantite":0,
         "prix_ttc":0,
         "payer_espece":req.body.payer_espece ,
@@ -470,6 +470,26 @@ app.post('/operations/add', async function (req, res) {
 app.post('/operations/delete', async function (req, res) {
     res.header("Access-Control-Allow-Origin", "*");
     // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    db.collection('operation_achat').find({"_id":ObjectId(req.body.id)}).toArray(function (err, operation) {
+        if (err) {
+            return console.log('Unable to fetch')
+        }
+       
+        operation[0].produit.map((productOperation)=>{
+        
+            db.collection('products').find({"_id":ObjectId(productOperation._id)}).toArray(function (err, productItem) {
+                if (err) {
+                    return console.log('Unable to fetch')
+                }
+                let data = {[`quantite_en_stock`] : parseInt(productItem[0].quantite_en_stock)+parseInt(productOperation.quantite)}
+                console.log(data)
+                db.collection('products').updateOne({
+                    "_id": ObjectId(productOperation._id) ,
+                },{$set:data}, (err, products) =>{
+                }); 
+            })
+        })
+    })
     db.collection('operation_achat').deleteOne( {
         "_id": ObjectId(req.body.id) ,
     }, (err, users) =>{
@@ -487,3 +507,125 @@ app.post('/operations/delete', async function (req, res) {
     });
 
 });
+app.get('/command/:id', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    db.collection('operation_achat').find({"_id":ObjectId(req.params.id)}).toArray(function (err, operation) {
+        if (err) {
+            return console.log('Unable to fetch')
+        }
+        res.json(operation) 
+    })
+
+});
+
+app.post('/article/checkstock', (req,res)=>{
+    res.header("Access-Control-Allow-Origin", "*");
+    db.collection('products').find({"_id":ObjectId(req.body._id)}).toArray(function (err, product) {
+        if (err) {
+            return console.log('Unable to fetch')
+        }
+        
+        if(parseInt(product[0].quantite_en_stock)>0){
+         return   res.json({status:200})
+        }   
+        return res.json({status:403}) 
+    })
+})
+
+app.post('/panier/update', (req,res)=>{
+    res.header("Access-Control-Allow-Origin", "*");
+    
+    moment.locale('fr')
+    var currentDate = moment().format("DD-MM-YYYY");
+    let updateDateModification = {[`date_modification`] : currentDate }
+    Object.keys(req.body.panierToUpdate).map((columnName,index)=>{
+        let data = {[`${columnName}`] : req.body.panierToUpdate[columnName]}
+        db.collection('operation_achat').updateOne({
+            "_id": ObjectId(req.body.panierToUpdate._id) ,
+        },{$set:data}, (err, products) =>{
+        });
+       
+    })
+    
+    db.collection('operation_achat').updateOne({
+        "_id": ObjectId(req.body.panierToUpdate._id) ,
+    },{$set:updateDateModification}, (err, products) =>{
+    });
+//    return res.json(req.body)
+    db.collection('products').find({"_id":ObjectId(req.body.productToDownStock._id)}).toArray(function (err, product) {
+        if (err) {
+            return console.log('Unable to fetch')
+        }
+        
+        if(parseInt(product[0].quantite_en_stock)>0){
+           let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock-1}
+            db.collection('products').updateOne({
+                "_id": ObjectId(req.body.productToDownStock._id) ,
+            },{$set:updateQuantite}, (err, products) =>{
+                db.collection('products').updateOne({
+                    "_id": ObjectId(req.body.productToDownStock._id) ,
+                },{$set:updateDateModification}, (err, products) =>{
+                 
+                });
+            });
+            
+        
+        }   
+        res.json({status:200}) 
+    })
+    
+})
+
+app.post('/panier/update/reduce', (req,res)=>{
+    res.header("Access-Control-Allow-Origin", "*");
+    
+    moment.locale('fr')
+    var currentDate = moment().format("DD-MM-YYYY");
+    let updateDateModification = {[`date_modification`] : currentDate }
+    Object.keys(req.body.panierToUpdate).map((columnName,index)=>{
+        let data = {[`${columnName}`] : req.body.panierToUpdate[columnName]}
+        db.collection('operation_achat').updateOne({
+            "_id": ObjectId(req.body.panierToUpdate._id) ,
+        },{$set:data}, (err, products) =>{
+        });
+       console.log(data)
+    })
+    if(req.body.panierToUpdate.produit===undefined){
+        let data = {[`produit`] : [] }
+        db.collection('operation_achat').updateOne({
+            "_id": ObjectId(req.body.panierToUpdate._id) ,
+        },{$set:data}, (err, products) =>{
+        });
+    }
+    console.log()
+    db.collection('operation_achat').updateOne({
+        "_id": ObjectId(req.body.panierToUpdate._id) ,
+    },{$set:updateDateModification}, (err, products) =>{
+    });
+//    return res.json(req.body)
+    db.collection('products').find({"_id":ObjectId(req.body.productToUpStock._id)}).toArray(function (err, product) {
+        if (err) {
+            return console.log('Unable to fetch')
+        }
+        
+        
+           let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock+1}
+            db.collection('products').updateOne({
+                "_id": ObjectId(req.body.productToUpStock._id) ,
+            },{$set:updateQuantite}, (err, products) =>{
+                db.collection('products').updateOne({
+                    "_id": ObjectId(req.body.productToUpStock._id) ,
+                },{$set:updateDateModification}, (err, products) =>{
+                 
+                });
+            });
+            
+        
+          
+        res.json({status:200}) 
+    })
+    
+})
+
+
