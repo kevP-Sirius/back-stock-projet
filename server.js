@@ -550,21 +550,21 @@ app.post('/panier/update', (req,res)=>{
         });
        
     })
-    if(req.body.panierToUpdate.produit)
+    
     
     db.collection('operation_achat').updateOne({
         "_id": ObjectId(req.body.panierToUpdate._id) ,
     },{$set:updateDateModification}, (err, products) =>{
     });
-//    return res.json(req.body)
+   
     db.collection('products').find({"_id":ObjectId(req.body.productToDownStock._id)}).toArray(function (err, product) {
         if (err) {
             return console.log('Unable to fetch')
         }
         
-        if(parseInt(product[0].quantite_en_stock)>0 && req.body.productToDownStock.action=="add"){
+        if(req.body.productToDownStock.action=="add"){ 
             let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock-parseInt(req.body.productToDownStock.quantiteToDown) }
-
+            console.log("add "+parseInt(req.body.productToDownStock.quantiteToDown))
            
             db.collection('products').updateOne({
                 "_id": ObjectId(req.body.productToDownStock._id) ,
@@ -579,8 +579,8 @@ app.post('/panier/update', (req,res)=>{
         
         }
         if(req.body.productToDownStock.action=="edit"){
-            if(parseInt(req.body.productToDownStock.quantiteToDown)>0){
-                let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock-parseInt(req.body.productToDownStock.quantiteToDown) }
+            if(parseInt(req.body.productToDownStock.quantiteToDown)<0){
+                let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock+parseInt(req.body.productToDownStock.quantiteToDown) }
                 db.collection('products').updateOne({
                     "_id": ObjectId(req.body.productToDownStock._id) ,
                 },{$set:updateQuantite}, (err, products) =>{
@@ -592,6 +592,7 @@ app.post('/panier/update', (req,res)=>{
                 });
             }else{
                 let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock+parseInt(req.body.productToDownStock.quantiteToDown) }
+                console.log(">0 "+parseInt(req.body.productToDownStock.quantiteToDown))
                 db.collection('products').updateOne({
                     "_id": ObjectId(req.body.productToDownStock._id) ,
                 },{$set:updateQuantite}, (err, products) =>{
@@ -604,7 +605,7 @@ app.post('/panier/update', (req,res)=>{
             }
         }
         if(req.body.productToDownStock.action=="delete"){
-            console.log('delete')
+            
             let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock+parseInt(req.body.productToDownStock.quantiteToDown) }
                 db.collection('products').updateOne({
                     "_id": ObjectId(req.body.productToDownStock._id) ,
