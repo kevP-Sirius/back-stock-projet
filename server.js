@@ -674,3 +674,28 @@ app.post('/panier/update/reduce', (req,res)=>{
 })
 
 
+app.post('/operation/update', (req,res)=>{
+    res.header("Access-Control-Allow-Origin", "*");
+    
+    moment.locale('fr')
+    var currentDate = moment().format("DD-MM-YYYY");
+    let updateDateModification = {[`date_modification`] : currentDate }
+    if(req.body.panierToUpdate.produit==undefined){
+        req.body.panierToUpdate.produit = []
+    }
+    Object.keys(req.body.panierToUpdate).map((columnName,index)=>{
+        let data = {[`${columnName}`] : req.body.panierToUpdate[columnName]}
+        db.collection('operation_achat').updateOne({
+            "_id": ObjectId(req.body.panierToUpdate._id) ,
+        },{$set:data}, (err, products) =>{
+        });
+       
+    })
+    
+    
+    db.collection('operation_achat').updateOne({
+        "_id": ObjectId(req.body.panierToUpdate._id) ,
+    },{$set:updateDateModification}, (err, products) =>{
+    });
+    res.json({status:200,message:'modification enregistré'}) 
+})
