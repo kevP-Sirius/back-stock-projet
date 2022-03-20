@@ -563,6 +563,11 @@ app.post('/panier/update', (req,res)=>{
         }
         
         if(req.body.productToDownStock.action=="add"){ 
+            let stateStockQte = parseInt(product[0].quantite_en_stock);
+            let qteToCheck = parseInt(req.body.productToDownStock.quantiteToDown)
+            if(stateStockQte<=0||qteToCheck>stateStockQte){
+              return  res.json({status:403}) 
+            }
             let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock-parseInt(req.body.productToDownStock.quantiteToDown) }
             console.log("add "+parseInt(req.body.productToDownStock.quantiteToDown))
            
@@ -572,14 +577,28 @@ app.post('/panier/update', (req,res)=>{
                 db.collection('products').updateOne({
                     "_id": ObjectId(req.body.productToDownStock._id) ,
                 },{$set:updateDateModification}, (err, products) =>{
-                 
+                    
                 });
+                db.collection('history_stock').insertOne( {
+                    "command_ref":ObjectId(req.body.panierToUpdate._id),
+                    "username":req.body.productToDownStock.userInfo.username,
+                    "role":req.body.productToDownStock.userInfo.role ,
+                    "action" : `ajout en panier` ,
+                    "action_qte" : `-${qteToCheck}` ,
+                    "previous_state":`${stateStockQte}`,
+                    "next_state":`${updateQuantite}`,
+                    "date_modification":updateDateModification
+                    },(err, user) => {
+                    
+                } );
             });
             
         
         }
         if(req.body.productToDownStock.action=="edit"){
             if(parseInt(req.body.productToDownStock.quantiteToDown)<0){
+                let stateStockQte = product[0].quantite_en_stock
+                let qteToCheck = parseInt(req.body.productToDownStock.quantiteToDown)
                 let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock+parseInt(req.body.productToDownStock.quantiteToDown) }
                 db.collection('products').updateOne({
                     "_id": ObjectId(req.body.productToDownStock._id) ,
@@ -590,7 +609,21 @@ app.post('/panier/update', (req,res)=>{
                      
                     });
                 });
+                db.collection('history_stock').insertOne( {
+                    "command_ref":ObjectId(req.body.panierToUpdate._id),
+                    "username":req.body.productToDownStock.userInfo.username,
+                    "role":req.body.productToDownStock.userInfo.role ,
+                    "action" : `modification article en panier` ,
+                    "action_qte" : `+${qteToCheck*-1}` ,
+                    "previous_state":`${stateStockQte}`,
+                    "next_state":`${updateQuantite}`,
+                    "date_modification":updateDateModification
+                    },(err, user) => {
+                    
+                } );
             }else{
+                let stateStockQte = product[0].quantite_en_stock
+                let qteToCheck = parseInt(req.body.productToDownStock.quantiteToDown)
                 let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock+parseInt(req.body.productToDownStock.quantiteToDown) }
                 console.log(">0 "+parseInt(req.body.productToDownStock.quantiteToDown))
                 db.collection('products').updateOne({
@@ -602,10 +635,23 @@ app.post('/panier/update', (req,res)=>{
                      
                     });
                 });
+                db.collection('history_stock').insertOne( {
+                    "command_ref":ObjectId(req.body.panierToUpdate._id),
+                    "username":req.body.productToDownStock.userInfo.username,
+                    "role":req.body.productToDownStock.userInfo.role ,
+                    "action" : `modification article en panier` ,
+                    "action_qte" : `-${qteToCheck}` ,
+                    "previous_state":`${stateStockQte}`,
+                    "next_state":`${updateQuantite}`,
+                    "date_modification":updateDateModification
+                    },(err, user) => {
+                    
+                } );
             }
         }
         if(req.body.productToDownStock.action=="delete"){
-            
+            let stateStockQte = product[0].quantite_en_stock
+            let qteToCheck = parseInt(req.body.productToDownStock.quantiteToDown)
             let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock+parseInt(req.body.productToDownStock.quantiteToDown) }
                 db.collection('products').updateOne({
                     "_id": ObjectId(req.body.productToDownStock._id) ,
@@ -615,7 +661,20 @@ app.post('/panier/update', (req,res)=>{
                     },{$set:updateDateModification}, (err, products) =>{
                      
                     });
+                    db.collection('history_stock').insertOne( {
+                        "command_ref":ObjectId(req.body.panierToUpdate._id),
+                        "username":req.body.productToDownStock.userInfo.username,
+                        "role":req.body.productToDownStock.userInfo.role ,
+                        "action" : `suppression article en panier` ,
+                        "action_qte" : `+${qteToCheck*-1}` ,
+                        "previous_state":`${stateStockQte}`,
+                        "next_state":`${updateQuantite}`,
+                        "date_modification":updateDateModification
+                        },(err, user) => {
+                        
+                    } );
                 });
+            
         }
         res.json({status:200}) 
     })
