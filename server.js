@@ -763,7 +763,7 @@ app.post('/operation/update', (req,res)=>{
 })
 
 
-app.get('/products', async function (req, res) {
+app.get('/historique/list', async function (req, res) {
     res.header("Access-Control-Allow-Origin", "*");
     // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     
