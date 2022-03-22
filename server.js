@@ -17,7 +17,7 @@ let hashIt = async(password)=>{
     return hashed
 }
 
-MongoClient.connect('mongodb://app_back_db:27017/', function(err, client) {
+MongoClient.connect('mongodb://localhost:27017/', function(err, client) {
   if (err) {
     throw err;
   }
@@ -586,8 +586,8 @@ app.post('/panier/update', (req,res)=>{
                     "action" : `ajout en panier` ,
                     "action_qte" : `-${qteToCheck}` ,
                     "previous_state":`${stateStockQte}`,
-                    "next_state":`${updateQuantite}`,
-                    "date_modification":updateDateModification
+                    "next_state":`${updateQuantite.quantite_en_stock}`,
+                    "date_modification":currentDate
                     },(err, user) => {
                     
                 } );
@@ -616,8 +616,8 @@ app.post('/panier/update', (req,res)=>{
                     "action" : `modification article en panier` ,
                     "action_qte" : `+${qteToCheck*-1}` ,
                     "previous_state":`${stateStockQte}`,
-                    "next_state":`${updateQuantite}`,
-                    "date_modification":updateDateModification
+                    "next_state":`${updateQuantite.quantite_en_stock}`,
+                    "date_modification":currentDate
                     },(err, user) => {
                     
                 } );
@@ -645,8 +645,8 @@ app.post('/panier/update', (req,res)=>{
                     "action" : `modification article en panier` ,
                     "action_qte" : `-${qteToCheck}` ,
                     "previous_state":`${stateStockQte}`,
-                    "next_state":`${updateQuantite}`,
-                    "date_modification":updateDateModification
+                    "next_state":`${updateQuantite.quantite_en_stock}`,
+                    "date_modification":currentDate
                     },(err, user) => {
                     
                 } );
@@ -671,8 +671,8 @@ app.post('/panier/update', (req,res)=>{
                         "action" : `suppression article en panier` ,
                         "action_qte" : `+${qteToCheck*-1}` ,
                         "previous_state":`${stateStockQte}`,
-                        "next_state":`${updateQuantite}`,
-                        "date_modification":updateDateModification
+                        "next_state":`${updateQuantite.quantite_en_stock}`,
+                        "date_modification":currentDate
                         },(err, user) => {
                         
                     } );
