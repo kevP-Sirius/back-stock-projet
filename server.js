@@ -625,6 +625,9 @@ app.post('/panier/update', (req,res)=>{
                 let stateStockQte = product[0].quantite_en_stock
                 let qteToCheck = parseInt(req.body.productToDownStock.quantiteToDown)
                 let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock+parseInt(req.body.productToDownStock.quantiteToDown) }
+                if(stateStockQte<=0||qteToCheck>stateStockQte){
+                    return  res.json({status:403}) 
+                }
                 console.log(">0 "+parseInt(req.body.productToDownStock.quantiteToDown))
                 db.collection('products').updateOne({
                     "_id": ObjectId(req.body.productToDownStock._id) ,
@@ -758,3 +761,21 @@ app.post('/operation/update', (req,res)=>{
     });
     res.json({status:200,message:'modification enregistré'}) 
 })
+
+
+app.get('/products', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    
+    try {
+        db.collection('history_stock').find().toArray(function (err, historys) {
+          if (err) {
+            return console.log('Unable to fetch')
+        }
+        res.json(historys);
+        });
+     } catch (e) {
+      res.json(e);
+     };
+    
+});
