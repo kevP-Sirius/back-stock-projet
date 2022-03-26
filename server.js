@@ -932,7 +932,6 @@ app.post('/historique/search', async function (req, res) {
         let search = historys.filter(element=>{
           return  element.client[0]._id==req.body.search 
         });
-        console.log(req.body.search)
         res.json(search);
         });
      } catch (e) {
