@@ -17,7 +17,7 @@ let hashIt = async(password)=>{
     return hashed
 }
 
-MongoClient.connect('mongodb://localhost:27017/', function(err, client) {
+MongoClient.connect('mongodb://app_back_db:27017/', function(err, client) {
   if (err) {
     throw err;
   }
@@ -204,10 +204,42 @@ app.post('/products/edit', async function (req, res) {
     
     try {
         // { $set: { [`${columnName}`] : req.body.newData } };
-        Object.keys(req.body).map((columnName,index)=>{
-            let data = {[`${columnName}`] : req.body[columnName]}
+        moment.locale('fr')
+        var currentDate = moment().format("DD-MM-YYYY");
+        db.collection('products').findOne(
+            {
+                "_id": ObjectId(req.body.product._id)
+            },
+            (err, productItem)=> {
+                if (err) {
+                    throw err;
+                }
+                let newStock = parseInt(req.body.product.quantite_en_stock)
+                let oldStock = parseInt(productItem.quantite_en_stock)
+                if(newStock!==oldStock){
+                    let actionType = (newStock-oldStock)>=0?"+":"-";
+                    let calculActionQte = newStock-oldStock
+                    db.collection('history_stock').insertOne( {
+                        "command_ref":ObjectId(req.body.product._id),
+                        "article":productItem.designation,
+                        "username":req.body.userInfo.username,
+                        "role":req.body.userInfo.role ,
+                        "action" : `action via la section admin produit` ,
+                        "action_qte" : `${actionType}${calculActionQte}` ,
+                        "previous_state":`${oldStock}`,
+                        "next_state":`${newStock}`,
+                        "date_modification":currentDate
+                        },(err, user) => {
+                        
+                    } );
+                }
+               
+        })
+        Object.keys(req.body.product).map((columnName,index)=>{
+            let data = {[`${columnName}`] : req.body.product[columnName]}
+            
             db.collection('products').updateOne({
-                "_id": ObjectId(req.body._id) ,
+                "_id": ObjectId(req.body.product._id) ,
             },{$set:data}, (err, products) =>{
             });
            
@@ -426,15 +458,26 @@ app.post('/clients/delete', async function (req, res) {
     });
 
 });
-app.get('/operations/list', async function (req, res) {
+app.post('/operations/list', async function (req, res) {
     res.header("Access-Control-Allow-Origin", "*");
+    console.log(req.body)
     // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    db.collection('operation_achat').find({}).toArray(function (err, achats) {
-        if (err) {
-            return console.log('Unable to fetch')
-        }
-        res.json(achats) 
-    })
+    if(req.body.userInfo.role==="admin"){
+        db.collection('operation_achat').find({}).toArray(function (err, achats) {
+            if (err) {
+                return console.log('Unable to fetch')
+            }
+            res.json(achats) 
+        })
+    }else{
+        db.collection('operation_achat').find({"owner":req.body.userInfo.username}).toArray(function (err, achats) {
+            if (err) {
+                return console.log('Unable to fetch')
+            }
+            res.json(achats) 
+        })
+    }
+    
     
 });
 app.post('/operations/add', async function (req, res) {
@@ -443,6 +486,8 @@ app.post('/operations/add', async function (req, res) {
     moment.locale('fr')
     var currentDate = moment().format("DD-MM-YYYY");
     db.collection('operation_achat').insertOne({
+        "owner":req.body.userInfo.username,
+        "role":req.body.userInfo.role,
         "client":req.body.client,
         "produit" : [] ,
         "quantite":0,
@@ -470,6 +515,8 @@ app.post('/operations/add', async function (req, res) {
 app.post('/operations/delete', async function (req, res) {
     res.header("Access-Control-Allow-Origin", "*");
     // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    moment.locale('fr')
+    var currentDate = moment().format("DD-MM-YYYY");
     db.collection('operation_achat').find({"_id":ObjectId(req.body.id)}).toArray(function (err, operation) {
         if (err) {
             return console.log('Unable to fetch')
@@ -487,7 +534,21 @@ app.post('/operations/delete', async function (req, res) {
                     "_id": ObjectId(productOperation._id) ,
                 },{$set:data}, (err, products) =>{
                 }); 
+                db.collection('history_stock').insertOne( {
+                    "command_ref":ObjectId(req.body.id),
+                    "article":productItem[0].designation,
+                    "username":req.body.userInfo.username,
+                    "role":req.body.userInfo.role ,
+                    "action" : `suppréssion opération` ,
+                    "action_qte" : `+${parseInt(productOperation.quantite)}` ,
+                    "previous_state":`${parseInt(productItem[0].quantite_en_stock)}`,
+                    "next_state":`${data.quantite_en_stock}`,
+                    "date_modification":currentDate
+                    },(err, user) => {
+                    
+                } );
             })
+            
         })
     })
     db.collection('operation_achat').deleteOne( {
@@ -581,6 +642,7 @@ app.post('/panier/update', (req,res)=>{
                 });
                 db.collection('history_stock').insertOne( {
                     "command_ref":ObjectId(req.body.panierToUpdate._id),
+                    "article":product[0].designation,
                     "username":req.body.productToDownStock.userInfo.username,
                     "role":req.body.productToDownStock.userInfo.role ,
                     "action" : `ajout en panier` ,
@@ -611,6 +673,7 @@ app.post('/panier/update', (req,res)=>{
                 });
                 db.collection('history_stock').insertOne( {
                     "command_ref":ObjectId(req.body.panierToUpdate._id),
+                    "article":product[0].designation,
                     "username":req.body.productToDownStock.userInfo.username,
                     "role":req.body.productToDownStock.userInfo.role ,
                     "action" : `modification article en panier` ,
@@ -640,6 +703,7 @@ app.post('/panier/update', (req,res)=>{
                 });
                 db.collection('history_stock').insertOne( {
                     "command_ref":ObjectId(req.body.panierToUpdate._id),
+                    "article":product[0].designation,
                     "username":req.body.productToDownStock.userInfo.username,
                     "role":req.body.productToDownStock.userInfo.role ,
                     "action" : `modification article en panier` ,
@@ -666,10 +730,11 @@ app.post('/panier/update', (req,res)=>{
                     });
                     db.collection('history_stock').insertOne( {
                         "command_ref":ObjectId(req.body.panierToUpdate._id),
+                        "article":product[0].designation,
                         "username":req.body.productToDownStock.userInfo.username,
                         "role":req.body.productToDownStock.userInfo.role ,
                         "action" : `suppression article en panier` ,
-                        "action_qte" : `+${qteToCheck*-1}` ,
+                        "action_qte" : `+${qteToCheck}` ,
                         "previous_state":`${stateStockQte}`,
                         "next_state":`${updateQuantite.quantite_en_stock}`,
                         "date_modification":currentDate
@@ -745,6 +810,66 @@ app.post('/operation/update', (req,res)=>{
     if(req.body.panierToUpdate.produit==undefined){
         req.body.panierToUpdate.produit = []
     }
+    db.collection('operation_achat').findOne({"_id":ObjectId(req.body.panierToUpdate._id)},(err,operation)=>{
+        let current_payer_espece = parseInt(operation.payer_espece)
+        let current_payer_cheque = parseInt(operation.payer_cheque)
+        let current_credit = parseInt(operation.payer_credit)
+        let new_current_payer_espece = parseInt(req.body.panierToUpdate.payer_espece)
+        let new_current_payer_cheque = parseInt(req.body.panierToUpdate.payer_cheque)
+        let new_current_credit = parseInt(req.body.panierToUpdate.payer_credit)
+
+        if(current_payer_espece!==new_current_payer_espece){
+            let actionType = (new_current_payer_espece-current_payer_espece)>=0?"+":"-"
+            calculActionQte= (new_current_payer_espece-current_payer_espece)
+            db.collection('history_financial').insertOne( {
+                "command_ref":ObjectId(req.body.panierToUpdate._id),
+                "client":operation.client,
+                "username":req.body.userInfo.username,
+                "role":req.body.userInfo.role ,
+                "action" : `Modification paiement espèce` ,
+                "action_qte" : `${actionType}${calculActionQte}` ,
+                "previous_state":`${current_payer_espece}`,
+                "next_state":`${new_current_payer_espece}`,
+                "date_modification":currentDate
+                },(err, user) => {
+                
+            } );
+        }
+        if(current_payer_cheque!==new_current_payer_cheque){
+            let actionType = (new_current_payer_cheque-current_payer_cheque)>=0?"+":""
+            calculActionQte = (new_current_payer_cheque-current_payer_cheque)
+            db.collection('history_financial').insertOne( {
+                "command_ref":ObjectId(req.body.panierToUpdate._id),
+                "client":operation.client,
+                "username":req.body.userInfo.username,
+                "role":req.body.userInfo.role ,
+                "action" : `Modification paiement cheque` ,
+                "action_qte" : `${actionType}${calculActionQte}` ,
+                "previous_state":`${current_payer_cheque}`,
+                "next_state":`${new_current_payer_cheque}`,
+                "date_modification":currentDate
+                },(err, user) => {
+                
+            } );
+        }
+        if(current_credit!==new_current_credit){
+            let actionType = (new_current_credit-current_credit)>=0?"+":"-"
+            calculActionQte = (new_current_credit-current_credit)
+            db.collection('history_financial').insertOne( {
+                "command_ref":ObjectId(req.body.panierToUpdate._id),
+                "client":operation.client,
+                "username":req.body.userInfo.username,
+                "role":req.body.userInfo.role ,
+                "action" : `Modification montant restant à payer` ,
+                "action_qte" : `${actionType}${calculActionQte}` ,
+                "previous_state":`${current_credit}`,
+                "next_state":`${new_current_credit}`,
+                "date_modification":currentDate
+                },(err, user) => {
+                
+            } );
+        }
+    })
     Object.keys(req.body.panierToUpdate).map((columnName,index)=>{
         let data = {[`${columnName}`] : req.body.panierToUpdate[columnName]}
         db.collection('operation_achat').updateOne({
@@ -773,6 +898,42 @@ app.get('/historique/list', async function (req, res) {
             return console.log('Unable to fetch')
         }
         res.json(historys);
+        });
+     } catch (e) {
+      res.json(e);
+     };
+    
+});
+app.get('/historiquefinancier/list', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    
+    try {
+        db.collection('history_financial').find().toArray(function (err, historys) {
+          if (err) {
+            return console.log('Unable to fetch')
+        }
+        res.json(historys);
+        });
+     } catch (e) {
+      res.json(e);
+     };
+    
+});
+app.post('/historique/search', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    
+    try {
+        db.collection('history_financial').find().toArray(function (err, historys) {
+          if (err) {
+            return console.log('Unable to fetch')
+        }
+        let search = historys.filter(element=>{
+          return  element.client[0]._id==req.body.search 
+        });
+        console.log(req.body.search)
+        res.json(search);
         });
      } catch (e) {
       res.json(e);
