@@ -45,6 +45,7 @@ app.post('/signup', async function (req, res) {
                 "email" : req.body.email ,
                 "role":req.body.role ,
                 "password" : hassPassword ,
+                "state":0,
                 "last_connexion":"",
                 "date_modification":""
                 },(err, user) => {
@@ -81,7 +82,11 @@ app.post('/signin', async function (req, res) {
         if (err) {
             throw err;
         }
-        console.log(result)
+        if(result.state!==1){
+            responsedb.status="404"
+            responsedb.message = 'compte désactivez , veuillez contactez un administrateur'
+            return res.json(responsedb)
+        }
         if(result===null){ 
             console.log('not found')
             responsedb.status="404"
@@ -106,7 +111,7 @@ app.post('/signin', async function (req, res) {
             }
             if(!verified){
                 responsedb.status="301"
-                responsedb.message = 'username or password error'
+                responsedb.message = 'identifiant ou mot de passe érroné'
                 return res.json(responsedb)
             }
             
@@ -244,6 +249,9 @@ app.post('/products/edit', async function (req, res) {
             });
            
         })
+        db.collection('products').updateOne({
+            "_id": ObjectId(req.body.product._id) ,
+        },{$set:{['date_modification']:currentDate}}, (err, clients) =>{});
         let responsedb ={}
         responsedb.status=200
         responsedb.message="produit modifié"
@@ -462,7 +470,7 @@ app.post('/operations/list', async function (req, res) {
     res.header("Access-Control-Allow-Origin", "*");
     console.log(req.body)
     // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    if(req.body.userInfo.role==="admin"){
+    if(req.body.userInfo.role==="admin"||req.body.userInfo.role==="comptable"){
         db.collection('operation_achat').find({}).toArray(function (err, achats) {
             if (err) {
                 return console.log('Unable to fetch')
@@ -485,7 +493,11 @@ app.post('/operations/add', async function (req, res) {
     // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     moment.locale('fr')
     var currentDate = moment().format("DD-MM-YYYY");
+    db.collection('operation_achat_id').insertOne({new_entry:0},(err,entrys)=>{
+
+    })
     db.collection('operation_achat').insertOne({
+        "id_show": await db.collection('operation_achat_id').find().count(),
         "owner":req.body.userInfo.username,
         "role":req.body.userInfo.role,
         "client":req.body.client,
@@ -645,7 +657,7 @@ app.post('/panier/update', (req,res)=>{
                     "article":product[0].designation,
                     "username":req.body.productToDownStock.userInfo.username,
                     "role":req.body.productToDownStock.userInfo.role ,
-                    "action" : `ajout en panier` ,
+                    "action" : `ajout en panier pour le client ${req.body.panierToUpdate.client[0].firstname} ${req.body.panierToUpdate.client[0].lastname}` ,
                     "action_qte" : `-${qteToCheck}` ,
                     "previous_state":`${stateStockQte}`,
                     "next_state":`${updateQuantite.quantite_en_stock}`,
@@ -676,7 +688,7 @@ app.post('/panier/update', (req,res)=>{
                     "article":product[0].designation,
                     "username":req.body.productToDownStock.userInfo.username,
                     "role":req.body.productToDownStock.userInfo.role ,
-                    "action" : `modification article en panier` ,
+                    "action" : `modification article en panier pour le client ${req.body.panierToUpdate.client[0].firstname} ${req.body.panierToUpdate.client[0].lastname}` ,
                     "action_qte" : `+${qteToCheck*-1}` ,
                     "previous_state":`${stateStockQte}`,
                     "next_state":`${updateQuantite.quantite_en_stock}`,
@@ -706,7 +718,7 @@ app.post('/panier/update', (req,res)=>{
                     "article":product[0].designation,
                     "username":req.body.productToDownStock.userInfo.username,
                     "role":req.body.productToDownStock.userInfo.role ,
-                    "action" : `modification article en panier` ,
+                    "action" : `modification article en panier pour le client ${req.body.panierToUpdate.client[0].firstname} ${req.body.panierToUpdate.client[0].lastname}` ,
                     "action_qte" : `-${qteToCheck}` ,
                     "previous_state":`${stateStockQte}`,
                     "next_state":`${updateQuantite.quantite_en_stock}`,
@@ -733,7 +745,7 @@ app.post('/panier/update', (req,res)=>{
                         "article":product[0].designation,
                         "username":req.body.productToDownStock.userInfo.username,
                         "role":req.body.productToDownStock.userInfo.role ,
-                        "action" : `suppression article en panier` ,
+                        "action" : `suppression article en panier pour le client ${req.body.panierToUpdate.client[0].firstname} ${req.body.panierToUpdate.client[0].lastname}` ,
                         "action_qte" : `+${qteToCheck}` ,
                         "previous_state":`${stateStockQte}`,
                         "next_state":`${updateQuantite.quantite_en_stock}`,
@@ -937,5 +949,111 @@ app.post('/historique/search', async function (req, res) {
      } catch (e) {
       res.json(e);
      };
+    
+});
+
+app.post('/products/search', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+   
+    db.collection('products').find({
+        "designation":req.body.designation
+    }).toArray(function (err, products) {
+        if (err) {
+            return console.log('Unable to fetch')
+        }
+        return res.json(products)
+    })
+     
+    
+});
+app.post('/clients/search', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+   
+    db.collection('clients').find({
+        "firstname":req.body.firstname
+    }).toArray(function (err, clients) {
+        if (err) {
+            return console.log('Unable to fetch')
+        }
+        return res.json(clients)
+    })
+     
+    
+});
+app.post('/users/search', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    
+    db.collection('users').find({
+        "username":req.body.username
+    }).toArray(function (err, users) {
+        if (err) {
+            return console.log('Unable to fetch')
+        }
+        return res.json(users)
+    })
+     
+    
+});
+app.post('/historiquestock/search', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    
+    db.collection('history_stock').find({
+        "article":req.body.article
+    }).toArray(function (err, history) {
+        if (err) {
+            return console.log('Unable to fetch')
+        }
+        return res.json(history)
+    })
+     
+    
+});
+
+app.post('/user/active', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+   
+    let data = {[`${"state"}`] : 1 }
+        db.collection('users').updateOne({
+            "_id": ObjectId(req.body.id) ,
+        },{$set:data}, (err, users) =>{
+            
+        });
+    moment.locale('fr')
+    var currentDate = moment().format("DD-MM-YYYY");
+    let data2 = {[`${"date_modification"}`] : currentDate }
+    db.collection('users').updateOne({
+        "_id": ObjectId(req.body.id) ,
+    },{$set:data2}, (err, users) =>{
+        return res.json("done")
+    });
+     
+    
+});
+app.post('/user/desactive', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    let data = {[`${"state"}`] : 0 }
+    db.collection('users').updateOne({
+        "_id": ObjectId(req.body.id) ,
+    },{$set:data}, (err, users) =>{
+        
+    });
+    moment.locale('fr')
+    var currentDate = moment().format("DD-MM-YYYY");
+    let data2 = {[`${"date_modification"}`] : currentDate }
+    db.collection('users').updateOne({
+    "_id": ObjectId(req.body.id) ,
+    },{$set:data2}, (err, users) =>{
+        return res.json("done")
+    }); 
+});
+app.get('/user/rescue/admin', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     
 });
