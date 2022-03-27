@@ -1055,5 +1055,10 @@ app.post('/user/desactive', async function (req, res) {
 app.get('/user/rescue/admin', async function (req, res) {
     res.header("Access-Control-Allow-Origin", "*");
     // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    
+    let data2 = {[`${"state"}`] : 1 }
+    db.collection('users').updateOne({
+        "role": "admin" ,
+    },{$set:data2}, (err, users) =>{
+        return res.json("done")
+    });
 });
