@@ -638,9 +638,9 @@ app.post('/panier/update', (req,res)=>{
         if(req.body.productToDownStock.action=="add"){ 
             let stateStockQte = parseInt(product[0].quantite_en_stock);
             let qteToCheck = parseInt(req.body.productToDownStock.quantiteToDown)
-            if(stateStockQte<=0||qteToCheck>stateStockQte){
-              return  res.json({status:403}) 
-            }
+            // if(stateStockQte<=0||qteToCheck>stateStockQte){
+            //   return  res.json({status:403}) 
+            // }
             let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock-parseInt(req.body.productToDownStock.quantiteToDown) }
             console.log("add "+parseInt(req.body.productToDownStock.quantiteToDown))
            
@@ -1061,4 +1061,20 @@ app.get('/user/rescue/admin', async function (req, res) {
     },{$set:data2}, (err, users) =>{
         return res.json("done")
     });
+});
+app.post('/historiquestock/delete/all', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    if(req.body.userInfo.role=='admin'){
+        db.collection('history_stock').drop()
+        return res.json("done")
+    }
+});
+app.post('/historiquefinancial/delete/all', async function (req, res) {
+    res.header("Access-Control-Allow-Origin", "*");
+    // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    if(req.body.userInfo.role=='admin'){
+        db.collection('history_financial').drop()
+        return res.json("done")
+    }
 });
