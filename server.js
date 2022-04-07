@@ -222,10 +222,10 @@ app.post('/products/edit', async function (req, res) {
                 let newStock = parseInt(req.body.product.quantite_en_stock)
                 let oldStock = parseInt(productItem.quantite_en_stock)
                 if(newStock!==oldStock){
-                    let actionType = (newStock-oldStock)>=0?"+":"-";
+                    let actionType = (newStock-oldStock)>=0?"+":"";
                     let calculActionQte = newStock-oldStock
                     db.collection('history_stock').insertOne( {
-                        "command_ref":ObjectId(req.body.product._id),
+                        "command_ref":"",
                         "article":productItem.designation,
                         "username":req.body.userInfo.username,
                         "role":req.body.userInfo.role ,
@@ -547,7 +547,7 @@ app.post('/operations/delete', async function (req, res) {
                 },{$set:data}, (err, products) =>{
                 }); 
                 db.collection('history_stock').insertOne( {
-                    "command_ref":ObjectId(req.body.id),
+                    "command_ref":operation.id_show,
                     "article":productItem[0].designation,
                     "username":req.body.userInfo.username,
                     "role":req.body.userInfo.role ,
@@ -641,7 +641,7 @@ app.post('/panier/update', (req,res)=>{
             // if(stateStockQte<=0||qteToCheck>stateStockQte){
             //   return  res.json({status:403}) 
             // }
-            let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock-parseInt(req.body.productToDownStock.quantiteToDown) }
+            let updateQuantite = {['quantite_en_stock']:parseInt(product[0].quantite_en_stock)-parseInt(req.body.productToDownStock.quantiteToDown) }
             console.log("add "+parseInt(req.body.productToDownStock.quantiteToDown))
            
             db.collection('products').updateOne({
@@ -653,7 +653,7 @@ app.post('/panier/update', (req,res)=>{
                     
                 });
                 db.collection('history_stock').insertOne( {
-                    "command_ref":ObjectId(req.body.panierToUpdate._id),
+                    "command_ref":req.body.panierToUpdate.id_show,
                     "article":product[0].designation,
                     "username":req.body.productToDownStock.userInfo.username,
                     "role":req.body.productToDownStock.userInfo.role ,
@@ -673,7 +673,7 @@ app.post('/panier/update', (req,res)=>{
             if(parseInt(req.body.productToDownStock.quantiteToDown)<0){
                 let stateStockQte = product[0].quantite_en_stock
                 let qteToCheck = parseInt(req.body.productToDownStock.quantiteToDown)
-                let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock+parseInt(req.body.productToDownStock.quantiteToDown) }
+                let updateQuantite = {['quantite_en_stock']:parseInt(product[0].quantite_en_stock)+parseInt(req.body.productToDownStock.quantiteToDown) }
                 db.collection('products').updateOne({
                     "_id": ObjectId(req.body.productToDownStock._id) ,
                 },{$set:updateQuantite}, (err, products) =>{
@@ -684,7 +684,7 @@ app.post('/panier/update', (req,res)=>{
                     });
                 });
                 db.collection('history_stock').insertOne( {
-                    "command_ref":ObjectId(req.body.panierToUpdate._id),
+                    "command_ref":req.body.panierToUpdate.id_show,
                     "article":product[0].designation,
                     "username":req.body.productToDownStock.userInfo.username,
                     "role":req.body.productToDownStock.userInfo.role ,
@@ -699,10 +699,10 @@ app.post('/panier/update', (req,res)=>{
             }else{
                 let stateStockQte = product[0].quantite_en_stock
                 let qteToCheck = parseInt(req.body.productToDownStock.quantiteToDown)
-                let updateQuantite = {['quantite_en_stock']:product[0].quantite_en_stock+parseInt(req.body.productToDownStock.quantiteToDown) }
-                if(stateStockQte<=0||qteToCheck>stateStockQte){
-                    return  res.json({status:403}) 
-                }
+                let updateQuantite = {['quantite_en_stock']:parseInt(product[0].quantite_en_stock)+parseInt(req.body.productToDownStock.quantiteToDown) }
+                // if(stateStockQte<=0||qteToCheck>stateStockQte){
+                //     return  res.json({status:403}) 
+                // }
                 console.log(">0 "+parseInt(req.body.productToDownStock.quantiteToDown))
                 db.collection('products').updateOne({
                     "_id": ObjectId(req.body.productToDownStock._id) ,
@@ -714,7 +714,7 @@ app.post('/panier/update', (req,res)=>{
                     });
                 });
                 db.collection('history_stock').insertOne( {
-                    "command_ref":ObjectId(req.body.panierToUpdate._id),
+                    "command_ref":req.body.panierToUpdate.id_show,
                     "article":product[0].designation,
                     "username":req.body.productToDownStock.userInfo.username,
                     "role":req.body.productToDownStock.userInfo.role ,
@@ -741,7 +741,7 @@ app.post('/panier/update', (req,res)=>{
                      
                     });
                     db.collection('history_stock').insertOne( {
-                        "command_ref":ObjectId(req.body.panierToUpdate._id),
+                        "command_ref":req.body.panierToUpdate.id_show,
                         "article":product[0].designation,
                         "username":req.body.productToDownStock.userInfo.username,
                         "role":req.body.productToDownStock.userInfo.role ,
@@ -831,10 +831,10 @@ app.post('/operation/update', (req,res)=>{
         let new_current_credit = parseInt(req.body.panierToUpdate.payer_credit)
 
         if(current_payer_espece!==new_current_payer_espece){
-            let actionType = (new_current_payer_espece-current_payer_espece)>=0?"+":"-"
+            let actionType = (new_current_payer_espece-current_payer_espece)>=0?"+":""
             calculActionQte= (new_current_payer_espece-current_payer_espece)
             db.collection('history_financial').insertOne( {
-                "command_ref":ObjectId(req.body.panierToUpdate._id),
+                "command_ref":req.body.panierToUpdate.id_show,
                 "client":operation.client,
                 "username":req.body.userInfo.username,
                 "role":req.body.userInfo.role ,
@@ -851,7 +851,7 @@ app.post('/operation/update', (req,res)=>{
             let actionType = (new_current_payer_cheque-current_payer_cheque)>=0?"+":""
             calculActionQte = (new_current_payer_cheque-current_payer_cheque)
             db.collection('history_financial').insertOne( {
-                "command_ref":ObjectId(req.body.panierToUpdate._id),
+                "command_ref":req.body.panierToUpdate.id_show,
                 "client":operation.client,
                 "username":req.body.userInfo.username,
                 "role":req.body.userInfo.role ,
@@ -865,10 +865,10 @@ app.post('/operation/update', (req,res)=>{
             } );
         }
         if(current_credit!==new_current_credit){
-            let actionType = (new_current_credit-current_credit)>=0?"+":"-"
+            let actionType = (new_current_credit-current_credit)>=0?"+":""
             calculActionQte = (new_current_credit-current_credit)
             db.collection('history_financial').insertOne( {
-                "command_ref":ObjectId(req.body.panierToUpdate._id),
+                "command_ref":req.body.panierToUpdate.id_show,
                 "client":operation.client,
                 "username":req.body.userInfo.username,
                 "role":req.body.userInfo.role ,

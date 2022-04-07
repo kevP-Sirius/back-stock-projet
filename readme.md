@@ -55,3 +55,8 @@ date_modification
 - historique stock rajouter dans action effectué le client concerné => fait
 - rajouter le logo du client dans la page d'accueil et dans le favicon => fait
 - rajouter une table id pour l'affichage de l'id dans la reférence commande  =>fait
+
+- l'id à corriger la il est encore sous object id 
+- l'affichage du client est ko dans la page opération
+- rajouter la possibilité d'avoir un prix différents de l'original
+
