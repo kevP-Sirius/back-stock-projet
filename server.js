@@ -1056,11 +1056,43 @@ app.post('/user/desactive', async function (req, res) {
 app.get('/user/rescue/admin', async function (req, res) {
     res.header("Access-Control-Allow-Origin", "*");
     // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    let data2 = {[`${"state"}`] : 1 }
-    db.collection('users').updateOne({
-        "role": "admin" ,
-    },{$set:data2}, (err, users) =>{
-        return res.json("done")
+    let hassPassword = await hashIt('admin');
+    db.collection('users').findOne(
+        {
+        'username':'admin'
+        },
+        (err, result)=> {
+        if (err) {
+            throw err;
+        } 
+        
+        if(result===null){
+            db.collection('users').insertOne( {
+                "username":'admin',
+                "email" : 'admin@admin.com' ,
+                "role":'admin' ,
+                "password" : hassPassword ,
+                "state":1,
+                "last_connexion":"",
+                "date_modification":""
+                },(err, user) => {
+                if (err) {
+                    return console.log('Unable to fetch')
+                }
+                let responsedb = {}
+                responsedb.status="201"
+                responsedb.message = 'compte crée vous pouvez vous connecté'
+                return res.json(responsedb)
+                // res.json({"insertedId" : user.insertedId,
+                // "status": "done"});
+            } );
+        }else{
+            db.collection('users').updateOne({
+            "username": 'admin' ,
+            },{$set:{'password':hassPassword}}, (err, users) =>{
+                return res.json("done")
+            }); 
+        }
     });
 });
 app.post('/historiquestock/delete/all', async function (req, res) {
