@@ -82,17 +82,18 @@ app.post('/signin', async function (req, res) {
         if (err) {
             throw err;
         }
-        if(result.state!==1){
-            responsedb.status="404"
-            responsedb.message = 'compte désactivez , veuillez contactez un administrateur'
-            return res.json(responsedb)
-        }
+        
         if(result===null){ 
             console.log('not found')
             responsedb.status="404"
             responsedb.message = 'identifiant ou mot de passe érroné'
             return res.json(responsedb)
         }else{
+            if(result.state!==1){
+                responsedb.status="404"
+                responsedb.message = 'compte désactivez , veuillez contactez un administrateur'
+                return res.json(responsedb)
+            }
             console.log('found')
             const verified = bcrypt.compareSync(req.body.password , result.password);
             if(verified){
