@@ -1,10 +1,13 @@
 #application de gestion de stock
 
 3 profile avec 3 role
-admin : peut tout faire
-comptable : comptable peut consulter les opérations
-livreur : crée les opérations/la modifier/pas la supprimer /
-il peut également faire des actiosn sur le client  : crée /modifier mais ne peut pas supprimer .
+admin : 
+- peut tout faire
+comptable : 
+- comptable peut consulter les opérations
+livreur : 
+- crée les opérations/la modifier/pas la supprimer /
+- il peut également faire des actiosn sur le client  : crée /modifier mais ne peut pas supprimer .
 
 # client :
 nom 
@@ -59,5 +62,6 @@ date_modification
 - l'id à corriger la il est encore sous object id =>fait
 - l'affichage du client est ko dans la page opération=>fait
 - rajouter la possibilité d'avoir un prix différents de l'original=>fait
-- rajouter l'export en pdf de bon de commande associé au commande
+- rajouter l'export en pdf de bon de commande associé au commande=> fait
+- 
 

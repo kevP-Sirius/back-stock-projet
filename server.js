@@ -54,7 +54,7 @@ app.post('/signup', async function (req, res) {
                 }
                 let responsedb = {}
                 responsedb.status="201"
-                responsedb.message = 'compte crée vous pouvez vous connecté'
+                responsedb.message = "compte crée , veuillez contactez un administrateur afin de l'activer"
                 return res.json(responsedb)
                 // res.json({"insertedId" : user.insertedId,
                 // "status": "done"});
