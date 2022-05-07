@@ -17,7 +17,7 @@ let hashIt = async(password)=>{
     return hashed
 }
 
-MongoClient.connect('mongodb://app_back_db:27017/', function(err, client) {
+MongoClient.connect('mongodb://localhost:27017/', function(err, client) {
   if (err) {
     throw err;
   }
@@ -494,7 +494,7 @@ app.post('/operations/add', async function (req, res) {
     // res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     moment.locale('fr')
     var currentDate = moment().format("DD-MM-YYYY");
-    db.collection('operation_achat_id').insertOne({new_entry:0},(err,entrys)=>{
+    await db.collection('operation_achat_id').insertOne({new_entry:0},(err,entrys)=>{
 
     })
     db.collection('operation_achat').insertOne({
@@ -510,16 +510,19 @@ app.post('/operations/add', async function (req, res) {
         "payer_credit":req.body.payer_credit ,
         "date_operation" : currentDate  ,
         "date_modification": ""
-        },(err, user) => {
+        },async (err, operation) => {
         if (err) {
             let responsedb = {}
             responsedb.status="204"
-            responsedb.message = "la commande n'a bien été crée"
+            responsedb.message = "la commande n'a pas été crée"
             return res.json(responsedb)
         }
+        let newOperation = await db.collection('operation_achat').find({"_id":ObjectId(operation.insertedId)}).toArray()
         let responsedb = {}
         responsedb.status="201"
         responsedb.message = 'la commande a bien été crée'
+        responsedb.operation_id=operation.insertedId
+        responsedb.operation_id_show=newOperation[0].id_show
         return res.json(responsedb)
         // res.json({"insertedId" : user.insertedId,
         // "status": "done"});
